@@ -1,0 +1,44 @@
+{% extends "base.html" %}
+
+{% block title %}
+	Register
+{% endblock %}
+
+{% block css %}
+{% endblock %}
+
+{% block js %}
+{% endblock %}
+
+{% block content %}
+    <div class="registration-form-wrapper">
+        <div>
+            <h3>Registration Form</h3>
+        </div>
+        {% if message %}
+            {{ message }}
+        {% endif %}
+
+        <form method="POST" action="">
+            <!-- Todo: Username and password validation --> 
+            <div class="mb-3">
+                <label for="username" class="form-label was-validated">Username</label>
+                <input type="text" class="form-control" name="username" id="username" aria-describedby="usernameHelp" required>
+                <div id="usernameHelp" class="form-text">Username will be visible publically.</div>
+
+            </div>
+
+            <div class="mb-3">
+                <label for="password" class="form-label">Password</label>
+                <input type="password" class="form-control" name="password" id="password" required>
+            </div>
+
+            <button type="submit" class="btn btn-primary">Submit</button>
+        </form>
+
+        <div>
+            <a href="/login">Already have an account?</a>
+        </div>
+
+    </div>
+{% endblock %}
