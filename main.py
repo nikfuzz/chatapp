@@ -1,7 +1,8 @@
 from crypt import methods
+from django.dispatch import receiver
 from flask import Flask, render_template, request, redirect, session
 from flask_socketio import SocketIO
-from app_info import get_secret_key, get_users_instance
+from app_info import get_secret_key, get_users_instance, get_conversation_instance
 from flask_bcrypt import Bcrypt
 
 app = Flask(__name__)
@@ -19,10 +20,14 @@ def chats():
 
 @app.route('/conversation')
 def sessions():
-    print(request.args['receiver'])
-    # todo: establish a socket
     if request.args['receiver']:
-        return render_template('session.html', receiver=request.args['receiver'])
+        receiver_id = get_users_instance().find_one({"username": request.args['receiver']}, {"_id": 1})
+        conversation_id = get_conversation_instance().find_one({"participants": {'$all': [receiver_id, session['user_id']]}})
+        if not conversation_id:
+            get_conversation_instance().insert_one({"participants": [receiver_id, session['user_id']] })
+            conversation_id = get_conversation_instance().find_one({"participants": [receiver_id, session['user_id']]}, {"_id": 1})
+
+        return render_template('session.html', receiver=request.args['receiver'], conversation_id=conversation_id)
     redirect('/')
 
 @app.route('/register', methods=['GET', 'POST'])
@@ -59,7 +64,6 @@ def register():
         }
 
         Users.insert_one(new_user)
-        print("User registered: ", new_user)
         # once the user gets registered redirect to home
         # todo: redirect to login success page
         return redirect('/')
@@ -87,8 +91,6 @@ def login():
         Users = get_users_instance()
         user_instance = Users.find_one({'username': username})
 
-        print(user_instance)
-
         if not user_instance:
             message = "No such user"
             return render_template('login.html', message=message)
@@ -98,11 +100,18 @@ def login():
             return render_template('login.html', message=message)
 
         session['username'] = user_instance['username']
+        session['user_id'] = str(user_instance['_id'])
 
         return redirect('/')
         
 
     return render_template('login.html')
+
+@app.route('/logout')
+def logout():
+    session['username'] = None
+    session['user_id'] = None
+    return redirect('/')
 
 def messageReceived(methods=['GET', 'POST']):
     print('message was received!!!')
